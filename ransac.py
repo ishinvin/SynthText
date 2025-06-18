@@ -1,7 +1,4 @@
-from __future__ import division
-import random
 import numpy as np
-
 
 def fit_plane(xyz,z_pos=None):
     """
@@ -62,33 +59,3 @@ def fit_plane_ransac(pts, neighbors=None,z_pos=None, dist_inlier=0.05,
             inliers.append(inlier)
         best_plane = np.argmax(n_refit)
         return m_refit[best_plane],inliers[best_plane]
-
-
-
-
-if __name__ == '__main__':
-    from matplotlib import pylab
-    from mpl_toolkits import mplot3d
-    fig = pylab.figure()
-    ax = mplot3d.Axes3D(fig)
-    
-    def plot_plane(a, b, c, d):
-        xx, yy = np.mgrid[10:20, 10:20]
-        return xx, yy, (-d - a * xx - b * yy) / c
-    
-    n = 100
-    max_iterations = 100
-    goal_inliers = n * 0.3
-    
-    # test data
-    xyzs = np.random.random((n, 3)) * 10 + 10
-    xyzs[:90, 2:] = xyzs[:90, :1]
-    
-    ax.scatter3D(xyzs.T[0], xyzs.T[1], xyzs.T[2])
-    
-    # RANSAC
-    m, b = run_ransac(xyzs, estimate, lambda x, y: is_inlier(x, y, 0.01), 3, goal_inliers, max_iterations)
-    a, b, c, d = m
-    xx, yy, zz = plot_plane(a, b, c, d)
-    ax.plot_surface(xx, yy, zz, color=(0, 1, 0, 0.5))
-    plt.show()

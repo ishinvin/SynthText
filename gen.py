@@ -19,6 +19,7 @@ import os.path as osp
 from synthgen import *
 from common import *
 import wget, tarfile
+from PIL import Image
 
 
 ## Define some configuration variables:
@@ -38,6 +39,12 @@ def get_data():
   Download the image,depth and segmentation data:
   Returns, the h5 database.
   """
+  if not osp.exists(DATA_PATH):
+    os.makedirs(DATA_PATH)
+
+  if not osp.exists('results'):
+    os.makedirs('results')
+
   if not osp.exists(DB_FNAME):
     try:
       colorprint(Color.BLUE,'\tdownloading data (56 M) from: '+DATA_URL,bold=True)
@@ -114,8 +121,8 @@ def main(viz=False):
 
       # re-size uniformly:
       sz = depth.shape[:2][::-1]
-      img = np.array(img.resize(sz,Image.ANTIALIAS))
-      seg = np.array(Image.fromarray(seg).resize(sz,Image.NEAREST))
+      img = np.array(img.resize(sz,Image.Resampling.LANCZOS))
+      seg = np.array(Image.fromarray(seg).resize(sz,Image.Resampling.NEAREST))
 
       print (colorize(Color.RED,'%d of %d'%(i,end_idx-1), bold=True))
       res = RV3.render_text(img,depth,seg,area,label,

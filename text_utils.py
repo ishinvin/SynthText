@@ -1,18 +1,10 @@
-from __future__ import division
 import numpy as np
-import matplotlib.pyplot as plt 
-import scipy.io as sio
 import os.path as osp
 import random, os
-import cv2
-#import cPickle as cp
-import _pickle as cp
 import scipy.signal as ssig
 import scipy.stats as sstat
 import pygame, pygame.locals
 from pygame import freetype
-#import Image
-from PIL import Image
 import math
 from common import *
 import pickle
@@ -266,8 +258,8 @@ class RenderFont(object):
         locs = [None for i in range(len(text_arrs))]
         out_arr = np.zeros_like(back_arr)
         for i in order:            
-            ba = np.clip(back_arr.copy().astype(np.float), 0, 255)
-            ta = np.clip(text_arrs[i].copy().astype(np.float), 0, 255)
+            ba = np.clip(back_arr.copy().astype(np.float64), 0, 255)
+            ta = np.clip(text_arrs[i].copy().astype(np.float64), 0, 255)
             ba[ba > 127] = 1e8
             intersect = ssig.fftconvolve(ba,ta[::-1,::-1],mode='valid')
             safemask = intersect < 1e8
@@ -383,15 +375,6 @@ class RenderFont(object):
             if len(loc) > 0:#successful in placing the text collision-free:
                 return text_mask,loc[0],bb[0],text
         return #None
-
-
-    def visualize_bb(self, text_arr, bbs):
-        ta = text_arr.copy()
-        for r in bbs:
-            cv.rectangle(ta, (r[0],r[1]), (r[0]+r[2],r[1]+r[3]), color=128, thickness=1)
-        plt.imshow(ta,cmap='gray')
-        plt.show()
-
 
 class FontState(object):
     """

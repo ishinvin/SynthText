@@ -4,24 +4,16 @@
 """
 Main script for synthetic text rendering.
 """
-
-from __future__ import division
 import copy
 import cv2
-import h5py
-from PIL import Image
 import numpy as np 
-#import mayavi.mlab as mym
 import matplotlib.pyplot as plt 
-import os.path as osp
-import scipy.ndimage as sim
 import scipy.spatial.distance as ssd
 import synth_utils as su
 import text_utils as tu
 from colorize3_poisson import Colorize
 from common import *
 import traceback, itertools
-
 
 class TextRegions(object):
     """
@@ -307,13 +299,7 @@ def viz_masks(fignum,rgb,seg,depth,label):
     for i,idx in enumerate(label):
         mask = seg==idx
         rgb_rand = (255*np.random.rand(3)).astype('uint8')
-        img[mask] = rgb_rand[None,None,:] 
-
-    #import scipy
-    # scipy.misc.imsave('seg.png', mim)
-    # scipy.misc.imsave('depth.png', depth)
-    # scipy.misc.imsave('txt.png', rgb)
-    # scipy.misc.imsave('reg.png', img)
+        img[mask] = rgb_rand[None,None,:]
 
     plt.close(fignum)
     plt.figure(fignum)
@@ -322,24 +308,6 @@ def viz_masks(fignum,rgb,seg,depth,label):
         plt.subplot(2,2,i+1)
         plt.imshow(ims[i])
     plt.show(block=False)
-
-def viz_regions(img,xyz,seg,planes,labels):
-    """
-    img,depth,seg are images of the same size.
-    visualizes depth masks for top NOBJ objects.
-    """
-    # plot the RGB-D point-cloud:
-    su.plot_xyzrgb(xyz.reshape(-1,3),img.reshape(-1,3))
-
-    # plot the RANSAC-planes at the text-regions:
-    for i,l in enumerate(labels):
-        mask = seg==l
-        xyz_region = xyz[mask,:]
-        su.visualize_plane(xyz_region,np.array(planes[i]))
-
-    mym.view(180,180)
-    mym.orientation_axes()
-    mym.show(True)
  
 def viz_textbb(fignum,text_im, bb_list,alpha=1.0):
     """
@@ -685,7 +653,6 @@ class RendererV3(object):
                 if viz:
                     viz_textbb(1,img, [idict['wordBB']], alpha=1.0)
                     viz_masks(2,img,seg,depth,regions['label'])
-                    # viz_regions(rgb.copy(),xyz,seg,regions['coeff'],regions['label'])
                     if i < ninstance-1:
-                        raw_input(colorize(Color.BLUE,'continue?',True))                    
+                        input(colorize(Color.BLUE,'continue?',True))                    
         return res

@@ -1,21 +1,9 @@
 import cv2 as cv
 import numpy as np 
-import matplotlib.pyplot as plt 
-import scipy.interpolate as si
-import scipy.ndimage as scim 
 import scipy.ndimage.interpolation as sii
-import os
 import os.path as osp
-#import cPickle as cp
-import _pickle as cp
-#import Image
-from PIL import Image
 from poisson_reconstruct import blit_images
 import pickle
-
-def sample_weighted(p_dict):
-    ps = p_dict.keys()
-    return ps[np.random.choice(len(ps),p=p_dict.values())]
 
 class Layer(object):
 
@@ -96,16 +84,6 @@ class FontColor(object):
             # need to swap to make the second color close to the input backgroun color
             return (col1, col2)
 
-    def mean_color(self, arr):
-        col = cv.cvtColor(arr, cv.COLOR_RGB2HSV)
-        col = np.reshape(col, (np.prod(col.shape[:2]),3))
-        col = np.mean(col,axis=0).astype('uint8')
-        return np.squeeze(cv.cvtColor(col[None,None,:],cv.COLOR_HSV2RGB))
-
-    def invert(self, rgb):
-        rgb = 127 + rgb
-        return rgb
-
     def complement(self, rgb_color):
         """
         return a color which is complementary to the RGB_COLOR.
@@ -128,16 +106,6 @@ class FontColor(object):
         if dh < 127: dh = 255-dh
         col1[0] = h1 + dh/2
         return np.squeeze(cv.cvtColor(col1[None,None,:],cv.COLOR_HSV2RGB))
-
-    def change_value(self, col_rgb, v_std=50):
-        col = np.squeeze(cv.cvtColor(col_rgb[None,None,:], cv.COLOR_RGB2HSV))
-        x = col[2]
-        vs = np.linspace(0,1)
-        ps = np.abs(vs - x/255.0)
-        ps /= np.sum(ps)
-        v_rand = np.clip(np.random.choice(vs,p=ps) + 0.1*np.random.randn(),0,1)
-        col[2] = 255*v_rand
-        return np.squeeze(cv.cvtColor(col[None,None,:],cv.COLOR_HSV2RGB))
 
 
 class Colorize(object):
@@ -239,15 +207,6 @@ class Colorize(object):
             return out_layer
         else:
             return layers[0]
-
-    def resize_im(self, im, osize):
-        return np.array(Image.fromarray(im).resize(osize[::-1], Image.BICUBIC))
-        
-    def occlude(self):
-        """
-        somehow add occlusion to text.
-        """
-        pass
 
     def color_border(self, col_text, col_bg):
         """
@@ -367,14 +326,6 @@ class Colorize(object):
         l_bg = Layer(alpha=255*np.ones_like(text_arr,'uint8'), color=bg_arr)
         l_out =  blit_images(l_normal.color,l_bg.color.copy())
         
-        # plt.subplot(1,3,1)
-        # plt.imshow(l_normal.color)
-        # plt.subplot(1,3,2)
-        # plt.imshow(l_bg.color)
-        # plt.subplot(1,3,3)
-        # plt.imshow(l_out)
-        # plt.show()
-        
         if l_out is None:
             # poisson recontruction produced
             # imperceptible text. In this case,
@@ -383,32 +334,6 @@ class Colorize(object):
             return self.merge_down(layers,blends).color
 
         return l_out
-
-
-    def check_perceptible(self, txt_mask, bg, txt_bg):
-        """
-        --- DEPRECATED; USE GRADIENT CHECKING IN POISSON-RECONSTRUCT INSTEAD ---
-
-        checks if the text after merging with background
-        is still visible.
-        txt_mask (hxw) : binary image of text -- 255 where text is present
-                                                   0 elsewhere
-        bg (hxwx3) : original background image WITHOUT any text.
-        txt_bg (hxwx3) : image with text.
-        """
-        bgo,txto = bg.copy(), txt_bg.copy()
-        txt_mask = txt_mask.astype('bool')
-        bg = cv.cvtColor(bg.copy(), cv.COLOR_RGB2Lab)
-        txt_bg = cv.cvtColor(txt_bg.copy(), cv.COLOR_RGB2Lab)
-        bg_px = bg[txt_mask,:]
-        txt_px = txt_bg[txt_mask,:]
-        bg_px[:,0] *= 100.0/255.0 #rescale - L channel
-        txt_px[:,0] *= 100.0/255.0
-
-        diff = np.linalg.norm(bg_px-txt_px,ord=None,axis=1)
-        diff = np.percentile(diff,[10,30,50,70,90])
-        print ("color diff percentile :", diff)
-        return diff, (bgo,txto)
 
     def color(self, bg_arr, text_arr, hs, place_order=None, pad=20):
         """
