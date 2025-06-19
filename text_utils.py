@@ -1,13 +1,13 @@
 import numpy as np
-import os.path as osp
 import random, os
 import scipy.signal as ssig
 import scipy.stats as sstat
 import pygame, pygame.locals
 from pygame import freetype
 import math
-from common import *
 import pickle
+from common import *
+from khmernltk import sentence_tokenize
 
 def sample_weighted(p_dict):
     ps = list(p_dict.keys())
@@ -95,7 +95,7 @@ class RenderFont(object):
 
         # text-source : gets english text:
         self.text_source = TextSource(min_nchar=self.min_nchar,
-                                      fn=osp.join(data_dir,'newsgroup/newsgroup.txt'))
+                                      fn=os.path.join(data_dir,'newsgroup/newsgroup.txt'))
 
         # get font-state object:
         self.font_state = FontState(data_dir)
@@ -152,7 +152,6 @@ class RenderFont(object):
         bbs = np.array(bbs)
         surf_arr, bbs = crop_safe(pygame.surfarray.pixels_alpha(surf), rect_union, bbs, pad=5)
         surf_arr = surf_arr.swapaxes(0,1)
-        #self.visualize_bb(surf_arr,bbs)
         return surf_arr, words, bbs
 
     def render_curved(self, font, word_text):
@@ -397,27 +396,19 @@ class FontState(object):
 
     def __init__(self, data_dir='data'):
 
-        char_freq_path = osp.join(data_dir, 'models/char_freq.cp')        
-        font_model_path = osp.join(data_dir, 'models/font_px2pt.cp')
+        char_freq_path = os.path.join(data_dir, 'models/char_freq.cp')        
+        font_model_path = os.path.join(data_dir, 'models/font_px2pt.cp')
 
         # get character-frequencies in the English language:
         with open(char_freq_path,'rb') as f:
-            #self.char_freq = cp.load(f)
-            u = pickle._Unpickler(f)
-            u.encoding = 'latin1'
-            p = u.load()
-            self.char_freq = p
+            self.char_freq = pickle.load(f)
 
         # get the model to convert from pixel to font pt size:
         with open(font_model_path,'rb') as f:
-            #self.font_model = cp.load(f)
-            u = pickle._Unpickler(f)
-            u.encoding = 'latin1'
-            p = u.load()
-            self.font_model = p
-            
+            self.font_model = pickle.load(f)
+
         # get the names of fonts to use:
-        self.FONT_LIST = osp.join(data_dir, 'fonts/fontlist.txt')
+        self.FONT_LIST = os.path.join(data_dir, 'fonts/fontlist.txt')
         self.fonts = [os.path.join(data_dir,'fonts',f.strip()) for f in open(self.FONT_LIST)]
 
 
@@ -435,7 +426,7 @@ class FontState(object):
             sizes = font.get_metrics(chars,size)
             good_idx = [i for i in range(len(sizes)) if sizes[i] is not None]
             sizes,w = [sizes[i] for i in good_idx], w[good_idx]
-            sizes = np.array(sizes).astype('float')[:,[3,4]]        
+            sizes = np.array(sizes).astype('float')[:,[3,4]]
             r = np.abs(sizes[:,1]/sizes[:,0]) # width/height
             good = np.isfinite(r)
             r = r[good]
@@ -506,7 +497,7 @@ class TextSource(object):
                       'PARA':self.sample_para}
 
         with open(fn,'r') as f:
-            self.txt = [l.strip() for l in f.readlines()]
+            self.txt = [sentence_tokenize(l.strip()) for l in f.readlines()]
 
         # distribution over line/words for LINE/PARA:
         self.p_line_nline = np.array([0.85, 0.10, 0.05])
@@ -577,7 +568,7 @@ class TextSource(object):
             # get words per line:
             nline = len(lines)
             for i in range(nline):
-                words = lines[i].split()
+                words = lines[i]
                 dw = len(words)-nword[i]
                 if dw > 0:
                     first_word_index = random.choice(range(dw+1))
@@ -596,15 +587,15 @@ class TextSource(object):
 
     def sample(self, nline_max,nchar_max,kind='WORD'):
         return self.fdict[kind](nline_max,nchar_max)
-        
+    
     def sample_word(self,nline_max,nchar_max,niter=100):
-        rand_line = self.txt[np.random.choice(len(self.txt))]                
+        rand_line = self.txt[np.random.choice(len(self.txt))]
         words = rand_line.split()
         rand_word = random.choice(words)
 
         iter = 0
         while iter < niter and (not self.is_good([rand_word])[0] or len(rand_word)>nchar_max):
-            rand_line = self.txt[np.random.choice(len(self.txt))]                
+            rand_line = self.txt[np.random.choice(len(self.txt))]
             words = rand_line.split()
             rand_word = random.choice(words)
             iter += 1
