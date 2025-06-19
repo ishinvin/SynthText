@@ -3,13 +3,13 @@
 
 from collections import Counter
 import pickle
+import os
 
 cnt = 0
-filename = './data/newsgroup/newsgroup.txt'
-with open(filename) as f:
+filename = os.path.abspath(os.path.join(os.getcwd(), 'data/newsgroup/newsgroup.txt'))
+with open(filename, encoding='utf-8') as f:
     c = Counter()
     for x in f:
-        x = x.decode('utf-8')
         c += Counter(x.strip())
         cnt += len(x.strip())
         # print c
