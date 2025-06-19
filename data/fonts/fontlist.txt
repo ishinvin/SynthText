@@ -1,0 +1,6 @@
+hanuman/Hanuman-Regular.ttf
+hanumanbold/Hanuman-Bold.ttf
+kantumruy/KantumruyPro-Regular.ttf
+kantumruybold/KantumruyPro-Bold.ttf
+kantumruyitalic/KantumruyPro-Italic.ttf
+moul/Moul-Regular.ttf

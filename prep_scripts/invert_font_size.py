@@ -18,6 +18,7 @@ models = {} #linear model
 
 FONT_LIST = os.path.abspath(os.path.join(os.getcwd(), 'data/fonts/fontlist.txt'))
 fonts = [os.path.join(os.getcwd(), 'data/fonts', f.strip()) for f in open(FONT_LIST)]
+output_filename = os.path.abspath(os.path.join(os.getcwd(), 'data/models/font_px2pt.cp'))
 
 for i in range(len(fonts)):
 	print(i)
@@ -30,5 +31,5 @@ for i in range(len(fonts)):
 	models[font.name] = m
 	xs.append(h)
 
-with open('font_px2pt.cp','wb') as f:
+with open(output_filename,'wb') as f:
 	cp.dump(models,f)
