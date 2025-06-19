@@ -5,8 +5,7 @@
 import pygame
 from pygame import freetype
 from text_utils import FontState
-import numpy as np 
-import matplotlib.pyplot as plt 
+import numpy as np
 import pickle as cp
 
 
@@ -25,7 +24,7 @@ for i in range(len(FS.fonts)):
 	font = freetype.Font(FS.fonts[i], size=12)
 	h = []
 	for y in ys:
-		h.append(font.get_sized_glyph_height(float(y)))
+		h.append(font.get_sized_glyph_height(y))
 	h = np.array(h)
 	m,_,_,_ = np.linalg.lstsq(A,h)
 	models[font.name] = m
