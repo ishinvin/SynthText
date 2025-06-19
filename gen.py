@@ -14,11 +14,10 @@ Entry-point for generating synthetic text images, as described in:
 
 import numpy as np
 import h5py
-import os, sys, traceback
+import os, traceback
 import os.path as osp
 from synthgen import *
 from common import *
-import wget, tarfile
 from PIL import Image
 
 
@@ -30,41 +29,7 @@ SECS_PER_IMG = 5 #max time per image in seconds
 # path to the data-file, containing image, depth and segmentation:
 DATA_PATH = 'data'
 DB_FNAME = osp.join(DATA_PATH,'dset.h5')
-# url of the data (google-drive public file):
-DATA_URL = 'http://www.robots.ox.ac.uk/~ankush/data.tar.gz'
 OUT_FILE = 'results/SynthText.h5'
-
-def get_data():
-  """
-  Download the image,depth and segmentation data:
-  Returns, the h5 database.
-  """
-  if not osp.exists(DATA_PATH):
-    os.makedirs(DATA_PATH)
-
-  if not osp.exists('results'):
-    os.makedirs('results')
-
-  if not osp.exists(DB_FNAME):
-    try:
-      colorprint(Color.BLUE,'\tdownloading data (56 M) from: '+DATA_URL,bold=True)
-      print()
-      sys.stdout.flush()
-      out_fname = 'data.tar.gz'
-      wget.download(DATA_URL,out=out_fname)
-      tar = tarfile.open(out_fname)
-      tar.extractall()
-      tar.close()
-      os.remove(out_fname)
-      colorprint(Color.BLUE,'\n\tdata saved at:'+DB_FNAME,bold=True)
-      sys.stdout.flush()
-    except:
-      print (colorize(Color.RED,'Data not found and have problems downloading.',bold=True))
-      sys.stdout.flush()
-      sys.exit(-1)
-  # open the h5 file and return:
-  return h5py.File(DB_FNAME,'r')
-
 
 def add_res_to_db(imgname,res,db):
   """
@@ -76,20 +41,20 @@ def add_res_to_db(imgname,res,db):
     dname = "%s_%d"%(imgname, i)
     db['data'].create_dataset(dname,data=res[i]['img'])
     db['data'][dname].attrs['charBB'] = res[i]['charBB']
-    db['data'][dname].attrs['wordBB'] = res[i]['wordBB']        
-    #db['data'][dname].attrs['txt'] = res[i]['txt']
-    L = res[i]['txt']
-    L = [n.encode("ascii", "ignore") for n in L]
-    db['data'][dname].attrs['txt'] = L
+    db['data'][dname].attrs['wordBB'] = res[i]['wordBB']
+    db['data'][dname].attrs.create('txt', res[i]['txt'], dtype=h5py.special_dtype(vlen=str))
 
 
 def main(viz=False):
   # open databases:
   print (colorize(Color.BLUE,'getting data..',bold=True))
-  db = get_data()
+  db = h5py.File(DB_FNAME,'r')
   print (colorize(Color.BLUE,'\t-> done',bold=True))
 
   # open the output h5 file:
+  if not osp.exists('results'):
+    os.makedirs('results')
+
   out_db = h5py.File(OUT_FILE,'w')
   out_db.create_group('/data')
   print (colorize(Color.GREEN,'Storing the output in: '+OUT_FILE, bold=True))
