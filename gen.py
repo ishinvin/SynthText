@@ -42,7 +42,7 @@ def add_res_to_db(imgname,res,db):
     db['data'].create_dataset(dname,data=res[i]['img'])
     db['data'][dname].attrs['charBB'] = res[i]['charBB']
     db['data'][dname].attrs['wordBB'] = res[i]['wordBB']
-    db['data'][dname].attrs.create('txt', res[i]['txt'], dtype=h5py.special_dtype(vlen=str))
+    db['data'][dname].attrs.create('txt', res[i]['txt'], dtype=h5py.string_dtype(encoding='utf-8'))
 
 
 def main(viz=False):
@@ -86,8 +86,8 @@ def main(viz=False):
 
       # re-size uniformly:
       sz = depth.shape[:2][::-1]
-      img = np.array(img.resize(sz,Image.ANTIALIAS))
-      seg = np.array(Image.fromarray(seg).resize(sz,Image.NEAREST))
+      img = np.array(img.resize(sz,Image.Resampling.LANCZOS))
+      seg = np.array(Image.fromarray(seg).resize(sz,Image.Resampling.NEAREST))
 
       print (colorize(Color.RED,'%d of %d'%(i,end_idx-1), bold=True))
       res = RV3.render_text(img,depth,seg,area,label,

@@ -25,7 +25,7 @@ for i in range(len(fonts)):
 	font = freetype.Font(fonts[i], size=12)
 	h = []
 	for y in ys:
-		h.append(font.get_sized_glyph_height(y))
+		h.append(font.get_sized_glyph_height(float(y)))
 	h = np.array(h)
 	m,_,_,_ = np.linalg.lstsq(A,h)
 	models[font.name] = m
