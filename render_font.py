@@ -42,58 +42,93 @@ class RenderFont(object):
 
         pygame.init()
 
-    def render_curved(self, font, word_text):
-        """
-        use curved baseline for rendering word
-        """
-        word_text = word_text.replace('\u200c', ' ')
-        wl = len(word_text)
+    # def render_curved(self, font, word_text):
+    #     """
+    #     use curved baseline for rendering word
+    #     """
+    #     word_text = word_text.replace('\u200c', ' ')
+    #     wl = len(word_text)
 
-        # create the surface:
+    #     # create the surface:
+    #     lspace = font.get_sized_height() + 1
+    #     lbound = font.get_rect(word_text)
+    #     fsize = (round(2.0*lbound.width), round(3*lspace))
+    #     surf = pygame.Surface(fsize, pygame.locals.SRCALPHA, 32)
+
+    #     # baseline state
+    #     mid_idx = wl//2
+    #     BS = self.baselinestate.get_sample()
+    #     curve = [BS['curve'](i-mid_idx) for i in range(wl)]
+    #     curve[mid_idx] = -np.sum(curve) / (wl-1)
+    #     rots  = [-int(math.degrees(math.atan(BS['diff'](i-mid_idx)/(font.size/2)))) for i in range(wl)]
+
+    #     bbs = []
+    #     # place middle char
+    #     rect = font.get_rect(word_text)
+    #     rect.centerx = surf.get_rect().centerx
+    #     rect.centery = surf.get_rect().centery + rect.height
+    #     rect.centery +=  curve[mid_idx]
+    #     ch_bounds = font.render_to(surf, rect, word_text, rotation=rots[mid_idx])
+    #     ch_bounds.x = rect.x + ch_bounds.x
+    #     ch_bounds.y = rect.y - ch_bounds.y
+    #     mid_ch_bb = np.array(ch_bounds)
+
+    #     # render chars to the left and right:
+    #     ch_idx = []
+    #     bbs.append(mid_ch_bb)
+    #     ch_idx.append(0)
+
+    #     # correct the bounding-box order:
+    #     bbs_sequence_order = [None for i in ch_idx]
+    #     for idx,i in enumerate(ch_idx):
+    #         bbs_sequence_order[i] = bbs[idx]
+    #     bbs = bbs_sequence_order
+
+    #     # get the union of characters for cropping:
+    #     r0 = pygame.Rect(bbs[0])
+    #     rect_union = r0.unionall(bbs)
+
+    #     # crop the surface to fit the text:
+    #     bbs = np.array(bbs)
+    #     surf_arr, bbs = crop_safe(pygame.surfarray.pixels_alpha(surf), rect_union, bbs, pad=5)
+    #     surf_arr = surf_arr.swapaxes(0,1)
+    #     return surf_arr, word_text, bbs
+
+    def render_curved(self, font, word_text):
+        word_text = word_text.replace('\u200c', ' ')
+        
+        # font metrics
         lspace = font.get_sized_height() + 1
         lbound = font.get_rect(word_text)
-        fsize = (round(2.0*lbound.width), round(3*lspace))
-        surf = pygame.Surface(fsize, pygame.locals.SRCALPHA, 32)
+        fsize = (round(2.0 * lbound.width), round(3 * lspace))
+        surf = pygame.Surface(fsize, pygame.SRCALPHA, 32)
+        surf = surf.convert_alpha()
 
-        # baseline state
-        mid_idx = wl//2
+        wl = len(word_text)
+        mid_idx = wl // 2
+
+        # Curved baseline sample
         BS = self.baselinestate.get_sample()
-        curve = [BS['curve'](i-mid_idx) for i in range(wl)]
-        curve[mid_idx] = -np.sum(curve) / (wl-1)
-        rots  = [-int(math.degrees(math.atan(BS['diff'](i-mid_idx)/(font.size/2)))) for i in range(wl)]
+        curve = [BS['curve'](i - mid_idx) for i in range(wl)]
+        curve[mid_idx] = -np.sum(curve) / (wl - 1)
 
-        bbs = []
-        # place middle char
+        # Render entire word as one unit
         rect = font.get_rect(word_text)
         rect.centerx = surf.get_rect().centerx
         rect.centery = surf.get_rect().centery + rect.height
-        rect.centery +=  curve[mid_idx]
-        ch_bounds = font.render_to(surf, rect, word_text, rotation=rots[mid_idx])
+        rect.centery += curve[mid_idx]
+
+        ch_bounds = font.render_to(surf, rect, word_text)
         ch_bounds.x = rect.x + ch_bounds.x
         ch_bounds.y = rect.y - ch_bounds.y
-        mid_ch_bb = np.array(ch_bounds)
 
-        # render chars to the left and right:
-        ch_idx = []
-        bbs.append(mid_ch_bb)
-        ch_idx.append(0)
+        bb = np.array(ch_bounds)
 
-        # correct the bounding-box order:
-        bbs_sequence_order = [None for i in ch_idx]
-        for idx,i in enumerate(ch_idx):
-            bbs_sequence_order[i] = bbs[idx]
-        bbs = bbs_sequence_order
-
-        # get the union of characters for cropping:
-        r0 = pygame.Rect(bbs[0])
-        rect_union = r0.unionall(bbs)
-
-        # crop the surface to fit the text:
-        bbs = np.array(bbs)
-        surf_arr, bbs = crop_safe(pygame.surfarray.pixels_alpha(surf), rect_union, bbs, pad=5)
-        surf_arr = surf_arr.swapaxes(0,1)
+        # Get cropped result
+        r0 = pygame.Rect(bb)
+        surf_arr, bbs = crop_safe(pygame.surfarray.pixels_alpha(surf), r0, [bb], pad=5)
+        surf_arr = surf_arr.swapaxes(0, 1)
         return surf_arr, word_text, bbs
-
 
     def get_nline_nchar(self,mask_size,font_height,font_width):
         """
