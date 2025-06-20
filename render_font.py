@@ -95,40 +95,50 @@ class RenderFont(object):
     #     return surf_arr, word_text, bbs
 
     def render_curved(self, font, word_text):
+        """
+        Render shaped text (e.g., Khmer) along a curved baseline.
+        Assumes the entire word is shaped and rendered as one unit.
+        """
         word_text = word_text.replace('\u200c', ' ')
-        
-        # font metrics
         lspace = font.get_sized_height() + 1
         lbound = font.get_rect(word_text)
         fsize = (round(2.0 * lbound.width), round(3 * lspace))
-        surf = pygame.Surface(fsize, pygame.SRCALPHA, 32)
-        surf = surf.convert_alpha()
 
+        # Create transparent surface
+        surf = pygame.Surface(fsize, pygame.SRCALPHA)
+
+        # Baseline curve sampling
         wl = len(word_text)
         mid_idx = wl // 2
-
-        # Curved baseline sample
         BS = self.baselinestate.get_sample()
         curve = [BS['curve'](i - mid_idx) for i in range(wl)]
         curve[mid_idx] = -np.sum(curve) / (wl - 1)
 
-        # Render entire word as one unit
+        # Render the entire word at center with vertical curve adjustment
         rect = font.get_rect(word_text)
         rect.centerx = surf.get_rect().centerx
         rect.centery = surf.get_rect().centery + rect.height
         rect.centery += curve[mid_idx]
 
+        # Render shaped word to surface
         ch_bounds = font.render_to(surf, rect, word_text)
-        ch_bounds.x = rect.x + ch_bounds.x
-        ch_bounds.y = rect.y - ch_bounds.y
 
-        bb = np.array(ch_bounds)
+        # Convert to global bounding box
+        ch_bounds_global = pygame.Rect(
+            rect.x + ch_bounds.x,
+            rect.y - ch_bounds.y,
+            ch_bounds.width,
+            ch_bounds.height
+        )
 
-        # Get cropped result
-        r0 = pygame.Rect(bb)
-        surf_arr, bbs = crop_safe(pygame.surfarray.pixels_alpha(surf), r0, [bb], pad=5)
+        # Crop alpha array
+        r0 = pygame.Rect(ch_bounds_global)
+        surf_array = pygame.surfarray.pixels_alpha(surf)
+        surf_arr, bbs = crop_safe(surf_array, r0, [ch_bounds_global], pad=5)
         surf_arr = surf_arr.swapaxes(0, 1)
-        return surf_arr, word_text, bbs
+
+        return surf_arr, word_text, np.array(bbs)
+
 
     def get_nline_nchar(self,mask_size,font_height,font_width):
         """
