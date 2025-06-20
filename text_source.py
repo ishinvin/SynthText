@@ -47,14 +47,17 @@ class TextSource(object):
                          3. Has at-least self.min_nchar characters
                          4. Not all characters are i,x,0,O,-
         """
-        def is_txt(l):
-            char_ex = ['i','I','o','O','0','-']
-            chs = [ch in char_ex for ch in l]
-            return not np.all(chs)
+        # def is_txt(l):
+        #     char_ex = ['i','I','o','O','0','-']
+        #     chs = [ch in char_ex for ch in l]
+        #     return not np.all(chs)
 
-        return [ (len(l)> self.min_nchar
-                 and self.check_symb_frac(l,f)
-                 and is_txt(l)) for l in txt ]
+        # return [ (len(l)> self.min_nchar
+        #          and self.check_symb_frac(l,f)
+        #          and is_txt(l)) for l in txt ]
+        return [ (len(l)> self.min_nchar) for l in txt ]
+    
+
 
     def center_align(self, lines):
         """
@@ -109,16 +112,29 @@ class TextSource(object):
     def sample(self, nline_max,nchar_max,kind='WORD'):
         return self.fdict[kind](nline_max,nchar_max)
         
+    # def sample_word(self,nline_max,nchar_max,niter=100):
+    #     rand_line = self.txt[np.random.choice(len(self.txt))]                
+    #     words = rand_line.split()
+    #     rand_word = random.choice(words)
+
+    #     iter = 0
+    #     while iter < niter and (not self.is_good([rand_word])[0] or len(rand_word)>nchar_max):
+    #         rand_line = self.txt[np.random.choice(len(self.txt))]                
+    #         words = rand_line.split()
+    #         rand_word = random.choice(words)
+    #         iter += 1
+
+    #     if not self.is_good([rand_word])[0] or len(rand_word)>nchar_max:
+    #         return []
+    #     else:
+    #         return rand_word
+    
     def sample_word(self,nline_max,nchar_max,niter=100):
-        rand_line = self.txt[np.random.choice(len(self.txt))]                
-        words = rand_line.split()
-        rand_word = random.choice(words)
+        rand_word = self.txt[np.random.choice(len(self.txt))]         
 
         iter = 0
         while iter < niter and (not self.is_good([rand_word])[0] or len(rand_word)>nchar_max):
-            rand_line = self.txt[np.random.choice(len(self.txt))]                
-            words = rand_line.split()
-            rand_word = random.choice(words)
+            rand_word = self.txt[np.random.choice(len(self.txt))]
             iter += 1
 
         if not self.is_good([rand_word])[0] or len(rand_word)>nchar_max:

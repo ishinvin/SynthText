@@ -104,11 +104,11 @@ class RenderFont(object):
         use curved baseline for rendering word
         """
         wl = len(word_text)
-        isword = len(word_text.split())==1
+        # isword = len(word_text.split())==1
 
         # do curved iff, the length of the word <= 10
-        if not isword or wl > 10 or np.random.rand() > self.p_curved:
-            return self.render_multiline(font, word_text)
+        # if not isword or wl > 10 or np.random.rand() > self.p_curved:
+        #     return self.render_multiline(font, word_text)
 
         # create the surface:
         lspace = font.get_sized_height() + 1
@@ -125,49 +125,20 @@ class RenderFont(object):
 
         bbs = []
         # place middle char
-        rect = font.get_rect(word_text[mid_idx])
+        rect = font.get_rect(word_text)
         rect.centerx = surf.get_rect().centerx
         rect.centery = surf.get_rect().centery + rect.height
         rect.centery +=  curve[mid_idx]
-        ch_bounds = font.render_to(surf, rect, word_text[mid_idx], rotation=rots[mid_idx])
+        ch_bounds = font.render_to(surf, rect, word_text, rotation=rots[mid_idx])
         ch_bounds.x = rect.x + ch_bounds.x
         ch_bounds.y = rect.y - ch_bounds.y
         mid_ch_bb = np.array(ch_bounds)
 
         # render chars to the left and right:
-        last_rect = rect
         ch_idx = []
-        for i in range(wl):
-            #skip the middle character
-            if i==mid_idx: 
-                bbs.append(mid_ch_bb)
-                ch_idx.append(i)
-                continue
+        bbs.append(mid_ch_bb)
+        ch_idx.append(0)
 
-            if i < mid_idx: #left-chars
-                i = mid_idx-1-i
-            elif i==mid_idx+1: #right-chars begin
-                last_rect = rect
-
-            ch_idx.append(i)
-            ch = word_text[i]
-
-            newrect = font.get_rect(ch)
-            newrect.y = last_rect.y
-            if i > mid_idx:
-                newrect.topleft = (last_rect.topright[0]+2, newrect.topleft[1])
-            else:
-                newrect.topright = (last_rect.topleft[0]-2, newrect.topleft[1])
-            newrect.centery = max(newrect.height, min(fsize[1] - newrect.height, newrect.centery + curve[i]))
-            try:
-                bbrect = font.render_to(surf, newrect, ch, rotation=rots[i])
-            except ValueError:
-                bbrect = font.render_to(surf, newrect, ch)
-            bbrect.x = newrect.x + bbrect.x
-            bbrect.y = newrect.y - bbrect.y
-            bbs.append(np.array(bbrect))
-            last_rect = newrect
-        
         # correct the bounding-box order:
         bbs_sequence_order = [None for i in ch_idx]
         for idx,i in enumerate(ch_idx):
@@ -300,7 +271,7 @@ class RenderFont(object):
 
             # sample text:
             text_type = sample_weighted(self.p_text)
-            text = self.text_source.sample(nline,nchar,text_type)
+            text = self.text_source.sample_word(nline,nchar)
             if len(text)==0 or np.any([len(line)==0 for line in text]):
                 continue
             #print colorize(Color.GREEN, text)

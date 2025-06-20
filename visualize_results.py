@@ -24,13 +24,13 @@ def viz_textbb(text_im, charBB_list, wordBB, alpha=1.0):
     H,W = text_im.shape[:2]
 
     # plot the character-BB:
-    for i in range(len(charBB_list)):
-        bbs = charBB_list[i]
-        ni = bbs.shape[-1]
-        for j in range(ni):
-            bb = bbs[:,:,j]
-            bb = np.c_[bb,bb[:,0]]
-            plt.plot(bb[0,:], bb[1,:], 'r', alpha=alpha/2)
+    # for i in range(len(charBB_list)):
+    #     bbs = charBB_list[i]
+    #     ni = bbs.shape[-1]
+    #     for j in range(ni):
+    #         bb = bbs[:,:,j]
+    #         bb = np.c_[bb,bb[:,0]]
+    #         plt.plot(bb[0,:], bb[1,:], 'r', alpha=alpha/2)
 
     # plot the word-BB:
     for i in range(wordBB.shape[-1]):
@@ -52,13 +52,14 @@ def main(db_fname):
     print ("total number of images : ", colorize(Color.RED, len(dsets), highlight=True))
     for k in dsets:
         rgb = db['data'][k][...]
-        charBB = db['data'][k].attrs['charBB']
+        # charBB = db['data'][k].attrs['charBB']
         wordBB = db['data'][k].attrs['wordBB']
         txt = db['data'][k].attrs['txt']
 
-        viz_textbb(rgb, [charBB], wordBB)
+        # viz_textbb(rgb, [charBB], wordBB)
+        viz_textbb(rgb, None, wordBB)
         print ("image name        : ", colorize(Color.RED, k, bold=True))
-        print ("  ** no. of chars : ", colorize(Color.YELLOW, charBB.shape[-1]))
+        # print ("  ** no. of chars : ", colorize(Color.YELLOW, charBB.shape[-1]))
         print ("  ** no. of words : ", colorize(Color.YELLOW, wordBB.shape[-1]))
         print ("  ** text         : ", colorize(Color.GREEN, txt))
 

@@ -9,7 +9,7 @@ import cv2
 import numpy as np 
 import matplotlib.pyplot as plt 
 import scipy.spatial.distance as ssd
-import traceback, itertools
+import traceback
 
 from colorize3_poisson import Colorize
 from common import *
@@ -258,6 +258,7 @@ class RendererV3(object):
         bb  : 2x4xn matrix of BB after perspective
         text: string of text -- for excluding symbols/punctuations.
         """
+        # return True
         h0 = np.linalg.norm(bb0[:,3,:] - bb0[:,0,:], axis=0)
         w0 = np.linalg.norm(bb0[:,1,:] - bb0[:,0,:], axis=0)
         hw0 = np.c_[h0,w0]
@@ -265,14 +266,16 @@ class RendererV3(object):
         h = np.linalg.norm(bb[:,3,:] - bb[:,0,:], axis=0)
         w = np.linalg.norm(bb[:,1,:] - bb[:,0,:], axis=0)
         hw = np.c_[h,w]
-
+        
+        if np.sum(hw0[:,1] == 0) > 0 or np.sum(hw[:,1] == 0) > 0:
+            return False
         # remove newlines and spaces:
-        text = ''.join(text.split())
-        assert len(text)==bb.shape[-1]
+        # text = ''.join(text.split())
+        # assert len(text)==bb.shape[-1]
 
-        alnum = np.array([ch.isalnum() for ch in text])
-        hw0 = hw0[alnum,:]
-        hw = hw[alnum,:]
+        # alnum = np.array([ch.isalnum() for ch in text])
+        # hw0 = hw0[alnum,:]
+        # hw = hw[alnum,:]
 
         min_h0, min_h = np.min(hw0[:,0]), np.min(hw[:,0])
         asp0, asp = hw0[:,0]/hw0[:,1], hw[:,0]/hw[:,1]
@@ -285,29 +288,32 @@ class RendererV3(object):
         return is_good
 
 
-    def get_min_h(selg, bb, text):
+    def get_min_h(self, bb, text):
+        # return True
         # find min-height:
         h = np.linalg.norm(bb[:,3,:] - bb[:,0,:], axis=0)
         # remove newlines and spaces:
         text = ''.join(text.split())
-        assert len(text)==bb.shape[-1]
+        # assert len(text)==bb.shape[-1]
 
-        alnum = np.array([ch.isalnum() for ch in text])
-        h = h[alnum]
+        # alnum = np.array([ch.isalnum() for ch in text])
+        # h = h[alnum]
         return np.min(h)
 
 
     def feather(self, text_mask, min_h):
         # determine the gaussian-blur std:
-        if min_h <= 15 :
-            bsz = 0.25
-            ksz=1
-        elif 15 < min_h < 30:
-            bsz = max(0.30, 0.5 + 0.1*np.random.randn())
-            ksz = 3
-        else:
-            bsz = max(0.5, 1.5 + 0.5*np.random.randn())
-            ksz = 5
+        bsz = 0.5 * np.random.rand()
+        ksz = np.random.choice([1,3,5])
+        # if min_h <= 15 :
+        #     bsz = 0.25
+        #     ksz=1
+        # elif 15 < min_h < 30:
+        #     bsz = max(0.30, 0.5 + 0.1*np.random.randn())
+        #     ksz = 3
+        # else:
+        #     bsz = max(0.5, 1.5 + 0.5*np.random.randn())
+        #     ksz = 5
         return cv2.GaussianBlur(text_mask,(ksz,ksz),bsz)
 
     def place_text(self,rgb,collision_mask,H,Hinv):
@@ -364,34 +370,34 @@ class RendererV3(object):
         output : 2x4xm matrix of BB coordinates,
                  where, m == number of words.
         """
-        wrds = text.split()
-        bb_idx = np.r_[0, np.cumsum([len(w) for w in wrds])]
-        wordBB = np.zeros((2,4,len(wrds)), 'float32')
+        # wrds = text.split()
+        # bb_idx = np.r_[0, np.cumsum([len(w) for w in wrds])]
+        # wordBB = np.zeros((2,4,len(wrds)), 'float32')
         
-        for i in range(len(wrds)):
-            cc = charBB[:,:,bb_idx[i]:bb_idx[i+1]]
+        # for i in range(len(wrds)):
+        #     cc = charBB[:,:,bb_idx[i]:bb_idx[i+1]]
 
-            # fit a rotated-rectangle:
-            # change shape from 2x4xn_i -> (4*n_i)x2
-            cc = np.squeeze(np.concatenate(np.dsplit(cc,cc.shape[-1]),axis=1)).T.astype('float32')
-            rect = cv2.minAreaRect(cc.copy())
-            box = np.array(cv2.boxPoints(rect))
+        #     # fit a rotated-rectangle:
+        #     # change shape from 2x4xn_i -> (4*n_i)x2
+        #     cc = np.squeeze(np.concatenate(np.dsplit(cc,cc.shape[-1]),axis=1)).T.astype('float32')
+        #     rect = cv2.minAreaRect(cc.copy())
+        #     box = np.array(cv2.boxPoints(rect))
 
-            # find the permutation of box-coordinates which
-            # are "aligned" appropriately with the character-bb.
-            # (exhaustive search over all possible assignments):
-            cc_tblr = np.c_[cc[0,:],
-                            cc[-3,:],
-                            cc[-2,:],
-                            cc[3,:]].T
-            perm4 = np.array(list(itertools.permutations(np.arange(4))))
-            dists = []
-            for pidx in range(perm4.shape[0]):
-                d = np.sum(np.linalg.norm(box[perm4[pidx],:]-cc_tblr,axis=1))
-                dists.append(d)
-            wordBB[:,:,i] = box[perm4[np.argmin(dists)],:].T
+        #     # find the permutation of box-coordinates which
+        #     # are "aligned" appropriately with the character-bb.
+        #     # (exhaustive search over all possible assignments):
+        #     cc_tblr = np.c_[cc[0,:],
+        #                     cc[-3,:],
+        #                     cc[-2,:],
+        #                     cc[3,:]].T
+        #     perm4 = np.array(list(itertools.permutations(np.arange(4))))
+        #     dists = []
+        #     for pidx in range(perm4.shape[0]):
+        #         d = np.sum(np.linalg.norm(box[perm4[pidx],:]-cc_tblr,axis=1))
+        #         dists.append(d)
+        #     wordBB[:,:,i] = box[perm4[np.argmin(dists)],:].T
 
-        return wordBB
+        return charBB
 
 
     def render_text(self,rgb,depth,seg,area,label,ninstance=1,viz=False):
