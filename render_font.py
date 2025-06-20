@@ -7,7 +7,7 @@ import pygame.locals
 
 from text_source import TextSource
 from font_state import FontState, BaselineState
-from text_utils import sample_weighted, crop_safe, move_bb
+from text_utils import crop_safe, move_bb
 
 class RenderFont(object):
     """
@@ -19,11 +19,6 @@ class RenderFont(object):
     def __init__(self, data_dir='data'):
         # distribution over the type of text:
         # whether to get a single word, paragraph or a line:
-        self.p_text = {
-            0.0 : 'WORD',
-            0.0 : 'LINE',
-            1.0 : 'PARA'
-        }
 
         ## TEXT PLACEMENT PARAMETERS:
         self.f_shrink = 0.90
@@ -47,68 +42,12 @@ class RenderFont(object):
 
         pygame.init()
 
-    def render_multiline(self,font,text):
-        """
-        renders multiline TEXT on the pygame surface SURF with the
-        font style FONT.
-        A new line in text is denoted by \n, no other characters are 
-        escaped. Other forms of white-spaces should be converted to space.
-
-        returns the updated surface, words and the character bounding boxes.
-        """
-        # get the number of lines
-        lines = text.split('\n')
-        lengths = [len(l) for l in lines]
-
-        # font parameters:
-        line_spacing = font.get_sized_height() + 1
-        
-        # initialize the surface to proper size:
-        line_bounds = font.get_rect(lines[np.argmax(lengths)])
-        fsize = (round(2.0*line_bounds.width), round(1.25*line_spacing*len(lines)))
-        surf = pygame.Surface(fsize, pygame.locals.SRCALPHA, 32)
-
-        bbs = []
-        space = font.get_rect('O')
-        x, y = 0, 0
-        for l in lines:
-            x = 0 # carriage-return
-            y += line_spacing # line-feed
-
-            for ch in l: # render each character
-                if ch.isspace(): # just shift
-                    x += space.width
-                else:
-                    # render the character
-                    ch_bounds = font.render_to(surf, (x,y), ch)
-                    ch_bounds.x = x + ch_bounds.x
-                    ch_bounds.y = y - ch_bounds.y
-                    x += ch_bounds.width
-                    bbs.append(np.array(ch_bounds))
-
-        # get the union of characters for cropping:
-        r0 = pygame.Rect(bbs[0])
-        rect_union = r0.unionall(bbs)
-
-        # get the words:
-        words = ' '.join(text.split())
-
-        # crop the surface to fit the text:
-        bbs = np.array(bbs)
-        surf_arr, bbs = crop_safe(pygame.surfarray.pixels_alpha(surf), rect_union, bbs, pad=5)
-        surf_arr = surf_arr.swapaxes(0,1)
-        return surf_arr, words, bbs
-
     def render_curved(self, font, word_text):
         """
         use curved baseline for rendering word
         """
+        word_text = word_text.replace('\u200c', ' ')
         wl = len(word_text)
-        # isword = len(word_text.split())==1
-
-        # do curved iff, the length of the word <= 10
-        # if not isword or wl > 10 or np.random.rand() > self.p_curved:
-        #     return self.render_multiline(font, word_text)
 
         # create the surface:
         lspace = font.get_sized_height() + 1
@@ -270,7 +209,6 @@ class RenderFont(object):
             assert nline >= 1 and nchar >= self.min_nchar
 
             # sample text:
-            text_type = sample_weighted(self.p_text)
             text = self.text_source.sample_word(nline,nchar)
             if len(text)==0 or np.any([len(line)==0 for line in text]):
                 continue

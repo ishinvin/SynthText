@@ -1,9 +1,5 @@
 import numpy as np
 
-def sample_weighted(p_dict):
-    ps = list(p_dict.keys())
-    return p_dict[np.random.choice(ps,p=ps)]
-
 def move_bb(bbs, t):
     """
     Translate the bounding-boxes in by t_x,t_y.
