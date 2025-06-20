@@ -15,7 +15,8 @@ from colorize3_poisson import Colorize
 from common import *
 from render_font import RenderFont
 from text_region import TextRegions
-from synth_utils import DepthCamera, rot3d, unrotate2d
+from depth_camera import DepthCamera
+from synth_utils import rot3d, unrotate2d
 
 def rescale_frontoparallel(p_fp,box_fp,p_im):
     """
