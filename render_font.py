@@ -40,7 +40,7 @@ class RenderFont(object):
         self.baselinestate = BaselineState()
 
         # text-source : gets english text:
-        self.text_source = TextSource(self.min_nchar, os.path.join(data_dir,'newsgroup/newsgroup.txt'))
+        self.text_source = TextSource(self.min_nchar, os.path.join(data_dir,'newsgroup/khmer_words.txt'))
 
         # get font-state object:
         self.font_state = FontState(data_dir)
