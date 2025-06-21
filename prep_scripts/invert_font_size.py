@@ -2,23 +2,20 @@
 # Date: 2015
 "Script to generate font-models."
 
-import pygame
-from pygame import freetype
-import numpy as np
-import pickle as cp
 import os
+import pickle
+import numpy as np
+from pygame import freetype
 
-pygame.init()
+freetype.init()
 
 ys = np.arange(8,200)
 A = np.c_[ys,np.ones_like(ys)]
 
 xs = []
-models = {} #linear model
-
-FONT_LIST = os.path.abspath(os.path.join(os.getcwd(), 'data/fonts/fontlist.txt'))
-fonts = [os.path.join(os.getcwd(), 'data/fonts', f.strip()) for f in open(FONT_LIST)]
-output_filename = os.path.abspath(os.path.join(os.getcwd(), 'data/models/font_px2pt.cp'))
+models = {}
+fonts = [os.path.join('data/fonts', f.strip()) for f in open('data/fonts/fontlist.txt')]
+output_filename = 'data/models/font_px2pt.cp'
 
 for i in range(len(fonts)):
 	print(i)
@@ -32,4 +29,4 @@ for i in range(len(fonts)):
 	xs.append(h)
 
 with open(output_filename,'wb') as f:
-	cp.dump(models,f)
+	pickle.dump(models,f)

@@ -18,7 +18,7 @@ def crop_safe(arr, rect, bbs=[], pad=0):
     Does safe cropping. Returns the cropped rectangle and
     the adjusted bounding-boxes
     """
-    rect = np.array(rect)
+    rect = np.array([rect.x, rect.y, rect.width, rect.height])
     rect[:2] -= pad
     rect[2:] += 2*pad
     v0 = [max(0,rect[0]), max(0,rect[1])]

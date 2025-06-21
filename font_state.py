@@ -14,7 +14,7 @@ class FontState(object):
     oblique = 0.2
     wide = 0.5
     strength = [0.05, 0.1]  # uniform dist in this interval
-    underline_adjustment = [1.0, 2.0]  # normal dist mean, std
+    # underline_adjustment = [1.0, 2.0]  # normal dist mean, std
     kerning = [2, 5, 0, 20]  # beta distribution alpha, beta, offset, range (mean is a/(a+b))
     border = 0.25
     random_caps = -1 ## don't recapitalize : retain the capitalization of the lexicon
@@ -82,11 +82,11 @@ class FontState(object):
             'font': self.fonts[int(np.random.randint(0, len(self.fonts)))],
             'size': self.size[1]*np.random.randn() + self.size[0],
             'underline': np.random.rand() < self.underline,
-            'underline_adjustment': max(2.0, min(-2.0, self.underline_adjustment[1]*np.random.randn() + self.underline_adjustment[0])),
+            # 'underline_adjustment': max(2.0, min(-2.0, self.underline_adjustment[1]*np.random.randn() + self.underline_adjustment[0])),
             'strong': np.random.rand() < self.strong,
             'oblique': np.random.rand() < self.oblique,
             'strength': (self.strength[1] - self.strength[0])*np.random.rand() + self.strength[0],
-            'char_spacing': int(self.kerning[3]*(np.random.beta(self.kerning[0], self.kerning[1])) + self.kerning[2]),
+            # 'char_spacing': int(self.kerning[3]*(np.random.beta(self.kerning[0], self.kerning[1])) + self.kerning[2]),
             'border': np.random.rand() < self.border,
             'random_caps': np.random.rand() < self.random_caps,
             'capsmode': random.choice(self.capsmode),
@@ -102,31 +102,11 @@ class FontState(object):
         """
         font = freetype.Font(fs['font'], size=fs['size'])
         font.underline = fs['underline']
-        font.underline_adjustment = fs['underline_adjustment']
+        # font.underline_adjustment = fs['underline_adjustment']
         font.strong = fs['strong']
         font.oblique = fs['oblique']
         font.strength = fs['strength']
-        char_spacing = fs['char_spacing']
+        # char_spacing = fs['char_spacing']
         font.antialiased = True
         font.origin = True
         return font
-    
-    
-class BaselineState(object):
-    curve = lambda this, a: lambda x: a*x*x
-    differential = lambda this, a: lambda x: 2*a*x
-    a = [0.50, 0.05]
-
-    def get_sample(self):
-        """
-        Returns the functions for the curve and differential for a and b
-        """
-        sgn = 1.0
-        if np.random.rand() < 0.5:
-            sgn = -1
-
-        a = self.a[1]*np.random.randn() + sgn*self.a[0]
-        return {
-            'curve': self.curve(a),
-            'diff': self.differential(a),
-        }

@@ -12,13 +12,14 @@ Entry-point for generating synthetic text images, as described in:
     }
 """
 
-import numpy as np
+import os
 import h5py
-import os, traceback
-import os.path as osp
-from synthgen import *
-from common import *
+import traceback
+import numpy as np
+
 from PIL import Image
+from synthgen import RendererV3
+from common import colorize, Color
 
 
 ## Define some configuration variables:
@@ -28,7 +29,7 @@ SECS_PER_IMG = 5 #max time per image in seconds
 
 # path to the data-file, containing image, depth and segmentation:
 DATA_PATH = 'data'
-DB_FNAME = osp.join(DATA_PATH,'dset.h5')
+DB_FNAME = os.path.join(DATA_PATH,'dset.h5')
 OUT_FILE = 'results/SynthText.h5'
 
 def add_res_to_db(imgname,res,db):
@@ -52,7 +53,7 @@ def main(viz=False):
   print (colorize(Color.BLUE,'\t-> done',bold=True))
 
   # open the output h5 file:
-  if not osp.exists('results'):
+  if not os.path.exists('results'):
     os.makedirs('results')
 
   out_db = h5py.File(OUT_FILE,'w')
@@ -86,8 +87,8 @@ def main(viz=False):
 
       # re-size uniformly:
       sz = depth.shape[:2][::-1]
-      img = np.array(img.resize(sz,Image.ANTIALIAS))
-      seg = np.array(Image.fromarray(seg).resize(sz,Image.NEAREST))
+      img = np.array(img.resize(sz,Image.Resampling.LANCZOS))
+      seg = np.array(Image.fromarray(seg).resize(sz,Image.Resampling.NEAREST))
 
       print (colorize(Color.RED,'%d of %d'%(i,end_idx-1), bold=True))
       res = RV3.render_text(img,depth,seg,area,label,
@@ -105,7 +106,6 @@ def main(viz=False):
       continue
   db.close()
   out_db.close()
-
 
 if __name__=='__main__':
   import argparse

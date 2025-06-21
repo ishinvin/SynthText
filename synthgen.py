@@ -12,7 +12,7 @@ import scipy.spatial.distance as ssd
 import traceback
 
 from colorize3_poisson import Colorize
-from common import *
+from common import colorize, time_limit, Color, TimeoutException
 from render_font import RenderFont
 from text_region import TextRegions
 from depth_camera import DepthCamera

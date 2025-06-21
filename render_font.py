@@ -3,11 +3,31 @@ import math
 import pygame
 import numpy as np
 import scipy.signal as ssig
-import pygame.locals
+from pygame import SRCALPHA
+# from PIL import Image
 
 from text_source import TextSource
-from font_state import FontState, BaselineState
+from font_state import FontState
 from text_utils import crop_safe, move_bb
+
+class BaselineState(object):
+    curve = lambda this, a: lambda x: a*x*x
+    differential = lambda this, a: lambda x: 2*a*x
+    a = [0.50, 0.05]
+
+    def get_sample(self):
+        """
+        Returns the functions for the curve and differential for a and b
+        """
+        sgn = 1.0
+        if np.random.rand() < 0.5:
+            sgn = -1
+
+        a = self.a[1]*np.random.randn() + sgn*self.a[0]
+        return {
+            'curve': self.curve(a),
+            'diff': self.differential(a),
+        }
 
 class RenderFont(object):
     """
@@ -17,21 +37,14 @@ class RenderFont(object):
     """
 
     def __init__(self, data_dir='data'):
-        # distribution over the type of text:
-        # whether to get a single word, paragraph or a line:
-
         ## TEXT PLACEMENT PARAMETERS:
-        self.f_shrink = 0.90
         self.max_shrink_trials = 5 # 0.9^5 ~= 0.6
-        # the minimum number of characters that should fit in a mask
-        # to define the maximum font height.
         self.min_nchar = 2
         self.min_font_h = 16 #px : 0.6*12 ~ 7px <= actual minimum height
         self.max_font_h = 120 #px
         self.p_flat = 0.10
 
         # curved baseline:
-        self.p_curved = 1.0
         self.baselinestate = BaselineState()
 
         # text-source : gets english text:
@@ -53,37 +66,21 @@ class RenderFont(object):
         lspace = font.get_sized_height() + 1
         lbound = font.get_rect(word_text)
         fsize = (round(2.0*lbound.width), round(3*lspace))
-        surf = pygame.Surface(fsize, pygame.locals.SRCALPHA, 32)
+        surf = pygame.Surface(fsize, SRCALPHA, 32)
 
         # baseline state
         mid_idx = wl//2
-        BS = self.baselinestate.get_sample()
-        curve = [BS['curve'](i-mid_idx) for i in range(wl)]
-        curve[mid_idx] = -np.sum(curve) / (wl-1)
-        rots  = [-int(math.degrees(math.atan(BS['diff'](i-mid_idx)/(font.size/2)))) for i in range(wl)]
+        bs = self.baselinestate.get_sample()
+        rots  = [-int(math.degrees(math.atan(bs['diff'](i-mid_idx)/(font.size/2)))) for i in range(wl)]
 
         bbs = []
         # place middle char
         rect = font.get_rect(word_text)
-        rect.centerx = surf.get_rect().centerx
-        rect.centery = surf.get_rect().centery + rect.height
-        rect.centery +=  curve[mid_idx]
         ch_bounds = font.render_to(surf, rect, word_text, rotation=rots[mid_idx])
-        ch_bounds.x = rect.x + ch_bounds.x
-        ch_bounds.y = rect.y - ch_bounds.y
-        mid_ch_bb = np.array(ch_bounds)
+        mid_ch_bb = np.array([ch_bounds.x, ch_bounds.y, ch_bounds.width, ch_bounds.height])
 
-        # render chars to the left and right:
-        ch_idx = []
         bbs.append(mid_ch_bb)
-        ch_idx.append(0)
-
-        # correct the bounding-box order:
-        bbs_sequence_order = [None for i in ch_idx]
-        for idx,i in enumerate(ch_idx):
-            bbs_sequence_order[i] = bbs[idx]
-        bbs = bbs_sequence_order
-
+        
         # get the union of characters for cropping:
         r0 = pygame.Rect(bbs[0])
         rect_union = r0.unionall(bbs)
@@ -91,6 +88,10 @@ class RenderFont(object):
         # crop the surface to fit the text:
         bbs = np.array(bbs)
         surf_arr, bbs = crop_safe(pygame.surfarray.pixels_alpha(surf), rect_union, bbs, pad=5)
+        # surf_arr_uint8 = np.array(surf_arr).astype(np.uint8)
+        # img = Image.fromarray(surf_arr_uint8, mode='L')
+        # img.show()
+
         surf_arr = surf_arr.swapaxes(0,1)
         return surf_arr, word_text, bbs
 

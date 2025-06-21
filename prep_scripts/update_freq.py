@@ -1,10 +1,9 @@
-import os
 import pickle
 from collections import Counter
 
 cnt = 0
-filename = os.path.abspath(os.path.join(os.getcwd(), 'data/newsgroup/khmer_words.txt'))
-output_filename = os.path.abspath(os.path.join(os.getcwd(), 'data/models/char_freq.cp'))
+filename = 'data/newsgroup/khmer_words.txt'
+output_filename = 'data/models/char_freq.cp'
 with open(filename, encoding='utf-8') as f:
     c = Counter()
     for x in f:
