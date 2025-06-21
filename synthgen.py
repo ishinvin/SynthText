@@ -359,47 +359,6 @@ class RendererV3(object):
             rnd = np.random.beta(5.0,1.0)
         return int(np.ceil(nmax * rnd))
 
-    def char2wordBB(self, charBB, text):
-        """
-        Converts character bounding-boxes to word-level
-        bounding-boxes.
-
-        charBB : 2x4xn matrix of BB coordinates
-        text   : the text string
-
-        output : 2x4xm matrix of BB coordinates,
-                 where, m == number of words.
-        """
-        # wrds = text.split()
-        # bb_idx = np.r_[0, np.cumsum([len(w) for w in wrds])]
-        # wordBB = np.zeros((2,4,len(wrds)), 'float32')
-        
-        # for i in range(len(wrds)):
-        #     cc = charBB[:,:,bb_idx[i]:bb_idx[i+1]]
-
-        #     # fit a rotated-rectangle:
-        #     # change shape from 2x4xn_i -> (4*n_i)x2
-        #     cc = np.squeeze(np.concatenate(np.dsplit(cc,cc.shape[-1]),axis=1)).T.astype('float32')
-        #     rect = cv2.minAreaRect(cc.copy())
-        #     box = np.array(cv2.boxPoints(rect))
-
-        #     # find the permutation of box-coordinates which
-        #     # are "aligned" appropriately with the character-bb.
-        #     # (exhaustive search over all possible assignments):
-        #     cc_tblr = np.c_[cc[0,:],
-        #                     cc[-3,:],
-        #                     cc[-2,:],
-        #                     cc[3,:]].T
-        #     perm4 = np.array(list(itertools.permutations(np.arange(4))))
-        #     dists = []
-        #     for pidx in range(perm4.shape[0]):
-        #         d = np.sum(np.linalg.norm(box[perm4[pidx],:]-cc_tblr,axis=1))
-        #         dists.append(d)
-        #     wordBB[:,:,i] = box[perm4[np.argmin(dists)],:].T
-
-        return charBB
-
-
     def render_text(self,rgb,depth,seg,area,label,ninstance=1,viz=False):
         """
         rgb   : HxWx3 image rgb values (uint8)
@@ -453,7 +412,7 @@ class RendererV3(object):
 
             print (colorize(Color.CYAN, " ** instance # : %d"%i))
 
-            idict = {'img':[], 'charBB':None, 'wordBB':None, 'txt':None}
+            idict = {'img':[], 'wordBB':None, 'txt':None}
 
             m = self.get_num_text_regions(nregions)#np.arange(nregions)#min(nregions, 5*ninstance*self.max_text_regions))
             reg_idx = np.arange(min(2*m,nregions))
@@ -502,8 +461,7 @@ class RendererV3(object):
                 # at least 1 word was placed in this instance:
                 idict['img'] = img
                 idict['txt'] = itext
-                idict['charBB'] = np.concatenate(ibb, axis=2)
-                idict['wordBB'] = self.char2wordBB(idict['charBB'].copy(), ' '.join(itext))
+                idict['wordBB'] = np.concatenate(ibb, axis=2)
                 res.append(idict.copy())
                 if viz:
                     viz_textbb(1,img, [idict['wordBB']], alpha=1.0)

@@ -60,7 +60,6 @@ class RenderFont(object):
         use curved baseline for rendering word
         """
         word_text = word_text.replace('\u200c', ' ')
-        wl = len(word_text)
 
         # create the surface:
         lspace = font.get_sized_height() + 1
@@ -69,17 +68,23 @@ class RenderFont(object):
         surf = pygame.Surface(fsize, SRCALPHA, 32)
 
         # baseline state
+        wl = len(word_text)
         mid_idx = wl//2
         bs = self.baselinestate.get_sample()
         rots  = [-int(math.degrees(math.atan(bs['diff'](i-mid_idx)/(font.size/2)))) for i in range(wl)]
 
         bbs = []
-        # place middle char
-        rect = font.get_rect(word_text)
-        ch_bounds = font.render_to(surf, rect, word_text, rotation=rots[mid_idx])
-        mid_ch_bb = np.array([ch_bounds.x, ch_bounds.y, ch_bounds.width, ch_bounds.height])
 
-        bbs.append(mid_ch_bb)
+        # text shaping capability https://github.com/pygame/pygame/pull/3330
+        font = pygame.font.Font(font.path, int(font.size))
+        font.set_script("Khmr")
+        word_surf = font.render(word_text, True, (255,255,255))
+        rotated_surf = pygame.transform.rotate(word_surf, rots[mid_idx])
+        rect = rotated_surf.get_rect(center=surf.get_rect().center)
+
+        # blit to surface
+        surf.blit(rotated_surf, rect.topleft)
+        bbs.append(np.array([rect.x, rect.y, rect.width, rect.height]))
         
         # get the union of characters for cropping:
         r0 = pygame.Rect(bbs[0])
@@ -91,7 +96,6 @@ class RenderFont(object):
         # surf_arr_uint8 = np.array(surf_arr).astype(np.uint8)
         # img = Image.fromarray(surf_arr_uint8, mode='L')
         # img.show()
-
         surf_arr = surf_arr.swapaxes(0,1)
         return surf_arr, word_text, bbs
 
@@ -206,7 +210,8 @@ class RenderFont(object):
             nline,nchar = self.get_nline_nchar(mask.shape[:2],f_h,f_h*f_asp)
             #print "  > nline = %d, nchar = %d"%(nline, nchar)
 
-            assert nline >= 1 and nchar >= self.min_nchar
+            # assert nline >= 1 and nchar >= self.min_nchar
+            assert nchar >= self.min_nchar
 
             # sample text:
             text = self.text_source.sample_word(nline,nchar)

@@ -41,9 +41,8 @@ def add_res_to_db(imgname,res,db):
   for i in range(ninstance):
     dname = "%s_%d"%(imgname, i)
     db['data'].create_dataset(dname,data=res[i]['img'])
-    db['data'][dname].attrs['charBB'] = res[i]['charBB']
     db['data'][dname].attrs['wordBB'] = res[i]['wordBB']
-    db['data'][dname].attrs.create('txt', res[i]['txt'], dtype=h5py.special_dtype(vlen=str))
+    db['data'][dname].attrs.create('txt', res[i]['txt'], dtype=h5py.string_dtype(encoding='utf-8'))
 
 
 def main(viz=False):
