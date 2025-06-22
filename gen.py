@@ -20,6 +20,7 @@ import numpy as np
 from PIL import Image
 from synthgen import RendererV3
 from common import colorize, Color
+from utils import add_res_to_db
 
 
 ## Define some configuration variables:
@@ -31,19 +32,6 @@ SECS_PER_IMG = 5 #max time per image in seconds
 DATA_PATH = 'data'
 DB_FNAME = os.path.join(DATA_PATH,'dset.h5')
 OUT_FILE = 'results/SynthText.h5'
-
-def add_res_to_db(imgname,res,db):
-  """
-  Add the synthetically generated text image instance
-  and other metadata to the dataset.
-  """
-  ninstance = len(res)
-  for i in range(ninstance):
-    dname = "%s_%d"%(imgname, i)
-    db['data'].create_dataset(dname,data=res[i]['img'])
-    db['data'][dname].attrs['wordBB'] = res[i]['wordBB']
-    db['data'][dname].attrs.create('txt', res[i]['txt'], dtype=h5py.string_dtype(encoding='utf-8'))
-
 
 def main(viz=False):
   # open databases:

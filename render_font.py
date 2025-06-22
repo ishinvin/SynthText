@@ -39,7 +39,7 @@ class RenderFont(object):
     def __init__(self, data_dir='data'):
         ## TEXT PLACEMENT PARAMETERS:
         self.max_shrink_trials = 5 # 0.9^5 ~= 0.6
-        self.min_nchar = 2
+        self.min_nchar = 3
         self.min_font_h = 16 #px : 0.6*12 ~ 7px <= actual minimum height
         self.max_font_h = 120 #px
         self.p_flat = 0.10
